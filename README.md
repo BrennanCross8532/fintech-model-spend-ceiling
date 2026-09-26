@@ -1,8 +1,8 @@
 # Put a monthly ceiling around fintech model calls
 
-The control decision precedes the code: set an account-level monthly hard cap, route elevated-risk payments to human review before they incur any model cost, and permit routine payments to reach the model only while under that ceiling. Infrai suits this boundary because the account control call and the OpenAI-compatible call share the same `INFRAI_API_KEY` and exactly the same `baseURL`, so the credential issuing the calls is itself subject to the monthly cap.
+The decision comes before the implementation: configure an account-level monthly hard cap, route elevated-risk payments to human review before they spend anything, and let routine payments reach the model under that ceiling. Infrai fits this boundary because the account control call and the OpenAI-compatible call use the same `INFRAI_API_KEY` and exactly the same `baseURL`, so the credential making the calls is also governed by their monthly cap.
 
-This is materially stronger than a billing alert followed by a manual shutoff. An alert asks an operator to react after a threshold is observed, whereas `account.budget.set` places the ceiling in the control plane the workload actually uses. The local risk rule stays separate and legible, since a high-risk payment warrants review even when monthly capacity is intact.
+This is stronger than a billing alert followed by a manual shutoff: an alert asks an operator to react after a threshold is observed, while `account.budget.set` places the ceiling in the control plane used by the workload itself. The local risk rule remains separate and readable because a high-risk payment deserves review even when monthly capacity remains.
 
 ## Run the decision first
 
@@ -30,9 +30,9 @@ export ALERT_THRESHOLD_USD='400'
 npm start -- configure
 ```
 
-The command sends `PUT /v1/account/budget/set` with `hard_cap_usd`, `period`, and `alert_threshold_usd`, then sends `POST /v1/account/webhooks/register` with the same credential. Each write carries a stable caller-owned idempotency key; the REST boundary decodes `{ok, data, error, metadata}` before interpreting the HTTP status and backs off on 429 responses, respecting `Retry-After` when present.
+The command sends `PUT /v1/account/budget/set` with `hard_cap_usd`, `period`, and `alert_threshold_usd`, then sends `POST /v1/account/webhooks/register` with the same credential. Each write has a stable caller-owned idempotency key; the REST boundary decodes `{ok, data, error, metadata}` before interpreting the HTTP status and backs off on 429 responses, respecting `Retry-After` when present.
 
-An account key created through `account.keys.create` reveals its plaintext once. Store it at creation time because it cannot be retrieved again; this example neither rotates nor revokes the credential serving the process.
+An account key created through `account.keys.create` reveals its plaintext once. Store it at creation time because it cannot be retrieved a second time; this example neither rotates nor revokes the credential serving the process.
 
 ## Send one payment through the service
 
